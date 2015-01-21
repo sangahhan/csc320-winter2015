@@ -22,6 +22,7 @@ os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
 
 def my_norm(v):
     v_min = v.min()
+    print v_min
     v_range = v.max()-v_min
     return (v_range-v_min)*255/v_range
     
@@ -72,9 +73,16 @@ def ncc(g,f,m_n):
     # precondition: g.shape >= f.shape
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
-    result = np.dot(g_copy.flatten(),f_copy.flatten()) / (my_norm(g_copy) * my_norm(f_copy))
-   
-    return result
+    if (g.size != f.size):
+        return -1
+    
+    G = g_copy - g.mean()
+    F = f_copy - f.mean()
+    
+    correlation = (G * F).sum()
+    normalizer = np.sqrt((G*G).sum() * (F*F).sum())
+    
+    return correlation / normalizer
 
 
 def ssd(g,f,m_n):
@@ -115,12 +123,13 @@ def get_scores(func, g, f, displacement_vectors):
     
 def best_match(func, g, f, displacement_vectors):
     results = get_scores(func, g, f, displacement_vectors)
-    print results[min(results)]
-    return results[min(results)][0]
+    if func is ssd:
+        return results[min(results)][0]
+    return results[max(results)][0]
  
 matplotlib.pyplot.close("all")
  
-i = imread('01031v.jpg')
+i = imread('00952v.jpg')
 i.astype(uint8)
 
 # crop borders
@@ -142,7 +151,7 @@ x[:,:,1] = g
 x[:,:,2] = b
 #figure(); imshow(x)
 
-displacements = get_displacement_vectors(5)
+displacements = get_displacement_vectors(10)
 
 g_match_ssd = best_match(ssd, b, g, displacements)
 r_match_ssd = best_match(ssd, b, r, displacements)
@@ -157,19 +166,18 @@ new_r = displaced_copies(b, r, r_match_ssd)
 manual_r = displaced_copies(b, r, (5,5))
 manual_g = displaced_copies(b, g, (2,3))
 
-y = zeros(new_r[0].shape + (3,)).astype(uint8)
-y[:,:,0] = new_r[1]
-y[:,:,2] = new_r[0]
-
-y[:,:,1] = new_g[1][3:,1:]
+y = zeros(new_r[0][:].shape + (3,)).astype(uint8)
+y[:,:,0] = new_r[1][:]
+y[:,:,1] = new_g[1][5:, :-2]
+y[:,:,2] = new_r[0][:]
 figure(); imshow(y)
 
 z = zeros(manual_g[0].shape + (3,)).astype(uint8)
 z[:,:,1] = manual_g[1]
 z[:,:,2] = manual_g[0]
-figure(); imshow(z)
+#figure(); imshow(z)
 
 z = zeros(manual_r[0].shape + (3,)).astype(uint8)
 z[:,:,0] = manual_r[1]
 z[:,:,2] = manual_r[0]
-figure(); imshow(z)
+#figure(); imshow(z)
