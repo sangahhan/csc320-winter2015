@@ -85,11 +85,11 @@ def ncc(g,f,m_n):
 
 
 def ssd(g,f,m_n):
-    normalize(g)
-    normalize(f)
+
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
     diff = np.subtract(g_copy,f_copy)
+
     return np.sum(diff * diff)
     
     
@@ -111,7 +111,9 @@ def get_displacement_vectors(n):
 def get_scores(func, g, f, displacement_vectors):
     results = {}
     for v in displacement_vectors:
-        results[func(g, f, v)] = v
+        score = func(g, f, v)
+        if score not in results:
+            results[score] = v
     
     return results
     
@@ -124,23 +126,20 @@ def best_match(func, g, f, displacement_vectors):
  
 matplotlib.pyplot.close("all")
  
-i = imread('00757v.jpg')
+i = imread('00872v.jpg')
 i.astype(uint8)
 
 # crop borders
 w = i.shape[1]
 w_5 = np.ceil(w * .05)
-i = i[w_5:-w_5, w_5:-w_5]
-#normalize image to be between 0 and 1
-i *= 255.0/i.max() 
+#i = i[w_5:-w_5, w_5:-w_5]
 
 
 # cut image into three peices
 l = i.shape[0]
-l_5 = np.ceil((l/3) * .05)
-b = i[:(l/3) - l_5]
-g = i[(l/3):((l/3)*2) - l_5]
-r = i[((l/3)*2):l-(l%3) - l_5]
+b = i[w_5:(l/3) - w_5, w_5:-w_5]
+g = i[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
+r = i[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
 
 
 x = zeros(g.shape + (3,)).astype(uint8)
@@ -149,23 +148,30 @@ x[:,:,1] = g
 x[:,:,2] = b
 figure(); imshow(x)
 
-displacements = get_displacement_vectors(10)
+displacements = get_displacement_vectors(5)
 
-g_match_ssd = best_match(ncc, b, g, displacements)
-r_match_ssd = best_match(ncc, b, r, displacements)
+g_match_ssd = best_match(ssd, b, g, displacements)
+r_match_ssd = best_match(ssd, b, r, displacements)
 
 new_g = displaced_copies(b, g, g_match_ssd)
 new_r = displaced_copies(b, r, r_match_ssd)
-new_r_zero = displaced_copies(b, r, (0,0))
 
-y = zeros(new_r[0].shape + (3,)).astype(uint8)
-y[:,:,0] = new_r[1]
-y[:,:,2] = new_r[0]
+manual_r = displaced_copies(b, r, (-2,-3))
+manual_g = displaced_copies(b, g, (-3,-1))
+
+y = zeros(new_r[0][1:].shape + (3,)).astype(uint8)
+y[:,:,0] = new_r[1][1:]
+y[:,:,2] = new_r[0][1:]
+
+y[:,:,1] = new_g[1][:, :-2]
 figure(); imshow(y)
 
-z = zeros(new_r_zero[0].shape + (3,)).astype(uint8)
-z[:,:,0] = new_r_zero[1]
-z[:,:,2] = new_r_zero[0]
+z = zeros(manual_g[0].shape + (3,)).astype(uint8)
+z[:,:,1] = manual_g[1]
+z[:,:,2] = manual_g[0]
 figure(); imshow(z)
 
-
+z = zeros(manual_r[0].shape + (3,)).astype(uint8)
+z[:,:,0] = manual_r[1]
+z[:,:,2] = manual_r[0]
+figure(); imshow(z)
