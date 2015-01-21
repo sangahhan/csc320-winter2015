@@ -21,7 +21,9 @@ os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
 ########################
 
 def my_norm(v):
-    return np.sqrt(np.sum(v**2))
+    v_min = v.min()
+    v_range = v.max()-v_min
+    return (v_range-v_min)*255/v_range
     
 def displaced_copies(g,f,m_n):
     ''' Return copies of g & f such that f is displaced onto g m down, n left'''
@@ -83,6 +85,8 @@ def ncc(g,f,m_n):
 
 
 def ssd(g,f,m_n):
+    normalize(g)
+    normalize(f)
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
     diff = np.subtract(g_copy,f_copy)
@@ -118,22 +122,25 @@ def best_match(func, g, f, displacement_vectors):
         return results[min(results)]
     return results[max(results)]
  
+matplotlib.pyplot.close("all")
+ 
 i = imread('00757v.jpg')
 i.astype(uint8)
 
 # crop borders
 w = i.shape[1]
-#w_5 = np.ceil(w * .05)
-#i = i[w_5:-w_5, w_5:-w_5]
+w_5 = np.ceil(w * .05)
+i = i[w_5:-w_5, w_5:-w_5]
 #normalize image to be between 0 and 1
 i *= 255.0/i.max() 
 
 
 # cut image into three peices
 l = i.shape[0]
-b = i[:(l/3)]
-g = i[(l/3):((l/3)*2)]
-r = i[((l/3)*2):l-(l%3)]
+l_5 = np.ceil((l/3) * .05)
+b = i[:(l/3) - l_5]
+g = i[(l/3):((l/3)*2) - l_5]
+r = i[((l/3)*2):l-(l%3) - l_5]
 
 
 x = zeros(g.shape + (3,)).astype(uint8)
@@ -144,20 +151,21 @@ figure(); imshow(x)
 
 displacements = get_displacement_vectors(10)
 
-g_match_ssd = best_match(ssd, b, g, displacements)
-r_match_ssd = best_match(ssd, b, r, displacements)
+g_match_ssd = best_match(ncc, b, g, displacements)
+r_match_ssd = best_match(ncc, b, r, displacements)
 
 new_g = displaced_copies(b, g, g_match_ssd)
 new_r = displaced_copies(b, r, r_match_ssd)
+new_r_zero = displaced_copies(b, r, (0,0))
 
 y = zeros(new_r[0].shape + (3,)).astype(uint8)
 y[:,:,0] = new_r[1]
 y[:,:,2] = new_r[0]
 figure(); imshow(y)
 
-z = zeros(new_g[0].shape + (3,)).astype(uint8)
-z[:,:,0] = new_g[1]
-z[:,:,1] = new_g[0]
+z = zeros(new_r_zero[0].shape + (3,)).astype(uint8)
+z[:,:,0] = new_r_zero[1]
+z[:,:,2] = new_r_zero[0]
 figure(); imshow(z)
 
 
