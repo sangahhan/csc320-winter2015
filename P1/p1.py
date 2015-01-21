@@ -73,13 +73,6 @@ def ncc(g,f,m_n):
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
     result = np.dot(g_copy.flatten(),f_copy.flatten()) / (my_norm(g_copy) * my_norm(f_copy))
-    
-    #cost = (np.sum((img1 - img1.mean())*(img2 - img2.mean())) / 
-    #       (np.sqrt(np.sum((img1 - img1.mean())**2)) * 
-    #        np.sqrt(np.sum((img2 - img2.mean())**2))))
-    
-    #mult = (g*f[m:,n:])
-    #result = mult.sum()
    
     return result
 
@@ -88,7 +81,7 @@ def ssd(g,f,m_n):
 
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
-    diff = np.subtract(g_copy,f_copy)
+    diff = (g_copy.astype("float") - f_copy.astype("float"))
 
     return np.sum(diff * diff)
     
@@ -113,20 +106,21 @@ def get_scores(func, g, f, displacement_vectors):
     for v in displacement_vectors:
         score = func(g, f, v)
         if score not in results:
-            results[score] = v
+            results[score] = [v]
+        else:
+            results[score].append(v)
     
     return results
     
     
 def best_match(func, g, f, displacement_vectors):
     results = get_scores(func, g, f, displacement_vectors)
-    if func is ssd:
-        return results[min(results)]
-    return results[max(results)]
+    print results[min(results)]
+    return results[min(results)][0]
  
 matplotlib.pyplot.close("all")
  
-i = imread('00872v.jpg')
+i = imread('01031v.jpg')
 i.astype(uint8)
 
 # crop borders
@@ -146,24 +140,28 @@ x = zeros(g.shape + (3,)).astype(uint8)
 x[:,:,0] = r
 x[:,:,1] = g
 x[:,:,2] = b
-figure(); imshow(x)
+#figure(); imshow(x)
 
 displacements = get_displacement_vectors(5)
 
 g_match_ssd = best_match(ssd, b, g, displacements)
 r_match_ssd = best_match(ssd, b, r, displacements)
 
+g_match_ncc = best_match(ncc, b, g, displacements)
+r_match_ncc = best_match(ncc, b, r, displacements)
+
+
 new_g = displaced_copies(b, g, g_match_ssd)
 new_r = displaced_copies(b, r, r_match_ssd)
 
-manual_r = displaced_copies(b, r, (-2,-3))
-manual_g = displaced_copies(b, g, (-3,-1))
+manual_r = displaced_copies(b, r, (5,5))
+manual_g = displaced_copies(b, g, (2,3))
 
-y = zeros(new_r[0][1:].shape + (3,)).astype(uint8)
-y[:,:,0] = new_r[1][1:]
-y[:,:,2] = new_r[0][1:]
+y = zeros(new_r[0].shape + (3,)).astype(uint8)
+y[:,:,0] = new_r[1]
+y[:,:,2] = new_r[0]
 
-y[:,:,1] = new_g[1][:, :-2]
+y[:,:,1] = new_g[1][3:,1:]
 figure(); imshow(y)
 
 z = zeros(manual_g[0].shape + (3,)).astype(uint8)
