@@ -37,18 +37,18 @@ over
 
 - Suggestion for checking your code: take any colour photo, and try to align its three colour channels. The optimal displacement for channels of a single photo will very likely be (0, 0) (though that's not guaranteed...).
 
-##Part 2
+##Part 2##
 
 The technique from Part 1 will only work for small images, and will take too long for larger images. This problem can be solved by rescaling the images with scipy.misc.imresize(), matching the small versions of the images to obtain a rough estimate of the match, and only then matching the large versions of the images. This procedure could be repeated several times. Implement matching so that it works for larger images as well. In the report, describe your results and the runtimes that you obtain.
 
-##What to submit
+##What to submit##
 
 The project should be done using Python 2 and should run on CDF. Your report should be in PDF format. You should use LaTeX to generate the report, and submit the .tex file as well. A sample template will be posted soon.
-###Important:
+###Important:###
 
 - Readability counts! If your code isn't readable or your report doesn't make sense, they are not that useful. In addition, the TA can't read them. You will lose marks for those things.
 
 - It is perfectly fine to discuss general ideas with other people, *if you acknowledge ideas in your report that are not your own*. However, you must not look at other people's code, or show your code to other people, and you must not look at other people's reports, or show your report to other people. All of those things are academic offenses.
 
-##Acknowledgements
+##Acknowledgements##
 The project was created by [Alexei Efros](http://www.eecs.berkeley.edu/~efros/ "Alexei Efros").
