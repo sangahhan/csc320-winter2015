@@ -29,11 +29,12 @@ For Part 1, you may assume that the input image will be of size similar to that 
 - NEW: the images won't display correctly if the maximum intensity is above 1 and they type is float. To convert an image i to uint8, go i.astype(uint8)
 -- To increase the efficiency of your code, avoid using loops! For example, you should always prefer 
 
-	c = np.dot(u, v) 
-over
+	*c = np.dot(u, v)*
+	
+	over
 
-	s =0
-	for x, y in zip(u, v): s += x*y
+	*s =0
+	for x, y in zip(u, v): s += x*y*
 
 - Suggestion for checking your code: take any colour photo, and try to align its three colour channels. The optimal displacement for channels of a single photo will very likely be (0, 0) (though that's not guaranteed...).
 
