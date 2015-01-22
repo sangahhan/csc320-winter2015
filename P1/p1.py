@@ -1,6 +1,6 @@
 from pylab import *
 import numpy as np
-np.seterr(divide='ignore', invalid='ignore')
+
 import matplotlib.pyplot as plt
 import matplotlib.cbook as cbook
 import random
@@ -81,8 +81,26 @@ def ncc(g,f,m_n):
     G = g_copy - g.mean()
     F = f_copy - f.mean()
     
-    corr = (G * F).sum()
-    norm = np.sqrt((G*G).sum() * (F*F).sum())
+    subtract_mean = (G * F).sum()
+    std_devs = np.sqrt((G*G).sum() * (F*F).sum())
+    
+    return subtract_mean / std_devs
+
+
+def zero_mean_ncc(g,f,m_n):
+    ''' Return the zero-mean normalized cross correlation of g and f, where f is 
+    displaced m down and n left.
+    
+    Keyword arguments:
+    g -- base image
+    f -- patch 
+    m_n -- a tuple that contains the values (m,n).
+    '''
+
+    g_copy, f_copy = displaced_copies(g, f, m_n)
+    
+    corr = np.dot(g_copy.flatten(), f_copy.flatten()).sum()
+    norm = np.linalg.norm(g_copy) * np.linalg.norm(f_copy)
     
     return corr / norm
 
@@ -140,9 +158,7 @@ def get_scores(func, g, f, displacement_vectors):
     for v in displacement_vectors:
         score = func(g, f, v)
         if score not in results:
-            results[score] = [v]
-        else:
-            results[score].append(v)
+            results[score] = v
     
     return results
     
@@ -159,8 +175,11 @@ def best_match(func, g, f, displacement_vectors):
     
     results = get_scores(func, g, f, displacement_vectors)
     if func is ssd:
-        return results[min(results)][0]
-    return results[max(results)][0]
+        result = results[min(results)]
+    else:
+        result = results[max(results)]
+    
+    return result
  
  
 def shift(img, displacement):
@@ -210,6 +229,7 @@ def crop(img, displacement):
         else:
             result = img[M:,N:]
     return result
+    
     
 def max_displacement(v1, v2):
     ''' Return the maximum (wrt each axis) displacement based on absolute value, 
@@ -276,6 +296,7 @@ def part1(func, img_name, displacement_range=10):
     
     return result
 
+
 def ssd_ncc(img_name, displacement_range=10):
     ''' Show an image that displays the solution side by side with using
     SSD and NCC, respectively.
@@ -288,18 +309,17 @@ def ssd_ncc(img_name, displacement_range=10):
     result_ssd = part1(ssd, img_name, displacement_range)
     result_ncc = part1(ncc, img_name, displacement_range)
     f = figure(figsize=(12, 8))
-    f.add_subplot(1, 2, 0)
-    imshow(result_ncc)
     f.add_subplot(1, 2, 1)
     imshow(result_ssd)
+    f.add_subplot(1, 2, 2)
+    imshow(result_ncc)
 
 if __name__ == '__main__':
     matplotlib.pyplot.close("all")
-    
     
     os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
     
     for filename in os.listdir("."):
         if filename.endswith(".jpg"):
-            ssd_ncc(filename)
+            ssd_ncc(filename, 15)
     
