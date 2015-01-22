@@ -10,8 +10,6 @@ from scipy.misc import imresize
 import matplotlib.image as mpimg
 import os
 
-os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
-
 
 ###################
 #Run the following for grayscale images to show up correctly and for images
@@ -19,15 +17,16 @@ os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
 #%matplotlib
 #gray()
 ########################
-
-def my_norm(v):
-    v_min = v.min()
-    print v_min
-    v_range = v.max()-v_min
-    return (v_range-v_min)*255/v_range
     
 def displaced_copies(g,f,m_n):
-    ''' Return copies of g & f such that f is displaced onto g m down, n left'''
+    ''' Return copies of g & f st they only contain the intersection of g and f 
+    when f is displaced m down and n left.
+    
+    Keyword arguments:
+    g -- base image
+    f -- patch 
+    m_n -- a tuple that contains the values (m,n).
+    '''
     
     m,n = m_n
     
@@ -64,28 +63,39 @@ def displaced_copies(g,f,m_n):
         else: # m is 0, n is 0
             g_copy = g
             f_copy = f
-    
     return (g_copy, f_copy)
         
 
 def ncc(g,f,m_n):
+    ''' Return the normalized cross correlation of g and f, where f is displaced
+    m down and n left.
     
-    # precondition: g.shape >= f.shape
+    Keyword arguments:
+    g -- base image
+    f -- patch 
+    m_n -- a tuple that contains the values (m,n).
+    '''
+
     g_copy, f_copy = displaced_copies(g, f, m_n)
-    
-    if (g.size != f.size):
-        return -1
     
     G = g_copy - g.mean()
     F = f_copy - f.mean()
     
-    correlation = (G * F).sum()
-    normalizer = np.sqrt((G*G).sum() * (F*F).sum())
+    corr = (G * F).sum()
+    norm = np.sqrt((G*G).sum() * (F*F).sum())
     
-    return correlation / normalizer
+    return corr / norm
 
 
 def ssd(g,f,m_n):
+    ''' Return the sum of squared differences for g and f, where f is displaced
+    m down and n left.
+    
+    Keyword arguments:
+    g -- base image
+    f -- patch 
+    m_n -- a tuple that contains the values (m,n).
+    '''
 
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
@@ -95,8 +105,14 @@ def ssd(g,f,m_n):
     
     
 def get_displacement_vectors(n):
-    result = []
-    for i in range(n+1):
+    ''' Return a list of vectors (represented by tuples) that represent possible
+    displacement points that go up to a certain range.
+    
+    Keyword arguments:
+    n -- range for the displacement points -> [-n, n]
+    '''
+    result = [(0,0)]
+    for i in range(1, n+1):
         for j in range(n+1):
             if (i,j) not in result:
                 result.append((i,j))
@@ -110,6 +126,16 @@ def get_displacement_vectors(n):
 
 
 def get_scores(func, g, f, displacement_vectors):
+    ''' Return a dictionary that maps scores to their corresponding displacement
+    vector.
+    
+    Keyword arguments:
+    func -- the function to compute the score with
+    g -- base image
+    f -- patch 
+    displacement_vectors -- a list of displacement vectors to try
+    '''
+    
     results = {}
     for v in displacement_vectors:
         score = func(g, f, v)
@@ -122,62 +148,158 @@ def get_scores(func, g, f, displacement_vectors):
     
     
 def best_match(func, g, f, displacement_vectors):
+    ''' Return the displacement vector with the ideal score.
+    
+    Keyword arguments:
+    func -- the function to compute the score with
+    g -- base image
+    f -- patch 
+    displacement_vectors -- a list of displacement vectors to try
+    '''
+    
     results = get_scores(func, g, f, displacement_vectors)
     if func is ssd:
         return results[min(results)][0]
     return results[max(results)][0]
  
-matplotlib.pyplot.close("all")
  
-i = imread('00952v.jpg')
-i.astype(uint8)
+def shift(img, displacement):
+    ''' Return an image that has been displaced a certain amount, with its 
+    remaining space filled with zeros (black).
+    
+    Keyword arguments:
+    img -- the image to displace
+    displacement -- the displacement vector by which we will displace the image
+    '''
+    
+    m,n = displacement
+    M = abs(m)
+    N = abs(n)
+    if m > 0:
+        if n > 0:
+            result = np.lib.pad(img[:-M,:-N],((M, 0),(N, 0)),mode='constant')
+        else:
+            result = np.lib.pad(img[:-M,N:],((M, 0),(0, N)),mode='constant')
+    else:
+        if n > 0:
+            result = np.lib.pad(img[M:,:-N],((0, M),(N, 0)),mode='constant')
+        else:
+            result = np.lib.pad(img[M:,N:],((0, M),(0, N)),mode='constant')
+    return result
+    
+    
+def crop(img, displacement):
+    ''' Return an image that has been cropped based on its displacement.
+    
+    Keyword arguments:
+    img -- the image to crop
+    displacement -- the displacement vector by which we will crop the image
+    '''
+    
+    m,n = displacement
+    M = abs(m)
+    N = abs(n)
+    if m < 0:
+        if n < 0:
+            result = img[:-M,:-N]
+        else:
+            result = img[:-M,N:]
+    else:
+        if n < 0:
+            result = img[M:,:-N]
+        else:
+            result = img[M:,N:]
+    return result
+    
+def max_displacement(v1, v2):
+    ''' Return the maximum (wrt each axis) displacement based on absolute value, 
+    given two displacements
+    '''
+    
+    m1, n1 = v1
+    m2, n2 = v2
+    
+    max_m = max([abs(m1), abs(m2)])
+    max_n = max([abs(n1), abs(n2)])
+    
+    if max_m == abs(m1):
+        if max_n == abs(n1):
+            result = (m1, n1)
+        else:
+            result = (m1, n2)
+    else:
+        if max_n == abs(n1):
+            result = (m2, n1)
+        else:
+            result = (m2, n2)
+    
+    return result
+    
 
-# crop borders
-w = i.shape[1]
-w_5 = np.ceil(w * .05)
-#i = i[w_5:-w_5, w_5:-w_5]
+def part1(func, img_name, displacement_range=10):
+    ''' Return an image that has been combined to be in full colour format from 
+    the three-channel input image that was given.
+    
+    Keyword arguments:
+    func -- corresponds to a function that implements some sort of patch-
+            matching algorithm
+    img_name -- name of the file with the 3-channelled photo (in the style of
+                Prokudin-Gorskii), that contains the three inverted negatives 
+                (top to bottom: blue, green, red)
+    displacement_range -- range for the displacement points (default 10)
+    '''
+    
+    i = imread(img_name)
+    i.astype(uint8)
 
+    # how much off the sides to crop off later...
+    w = i.shape[1]
+    w_5 = np.ceil(w * .05)
+    
+    # cut image into three peices, cropping out the borders    
+    l = i.shape[0]
+    b = i[w_5:(l/3) - w_5, w_5:-w_5]
+    g = i[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
+    r = i[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
+    
+    displacements = get_displacement_vectors(displacement_range)
+    
+    g_match = best_match(func, b, g, displacements)
+    r_match = best_match(func, b, r, displacements)
+    
+    result = zeros(b.shape + (3,), dtype=uint8)
+    result[:,:,0] = shift(r, r_match)
+    result[:,:,1] = shift(g, g_match)
+    result[:,:,2] = b
+    
+    result = crop(result, max_displacement(r_match, g_match))
+    
+    return result
 
-# cut image into three peices
-l = i.shape[0]
-b = i[w_5:(l/3) - w_5, w_5:-w_5]
-g = i[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
-r = i[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
+def ssd_ncc(img_name, displacement_range=10):
+    ''' Show an image that displays the solution side by side with using
+    SSD and NCC, respectively.
+    
+    Keyword arguments:
+    img_name -- name of the file with the 3-channelled photo
+    displacement_range -- range for the displacement points, default 10
+    '''
 
+    result_ssd = part1(ssd, img_name, displacement_range)
+    result_ncc = part1(ncc, img_name, displacement_range)
+    f = figure(figsize=(12, 8))
+    f.add_subplot(1, 2, 0)
+    imshow(result_ncc)
+    f.add_subplot(1, 2, 1)
+    imshow(result_ssd)
 
-x = zeros(g.shape + (3,)).astype(uint8)
-x[:,:,0] = r
-x[:,:,1] = g
-x[:,:,2] = b
-#figure(); imshow(x)
-
-displacements = get_displacement_vectors(10)
-
-g_match_ssd = best_match(ssd, b, g, displacements)
-r_match_ssd = best_match(ssd, b, r, displacements)
-
-g_match_ncc = best_match(ncc, b, g, displacements)
-r_match_ncc = best_match(ncc, b, r, displacements)
-
-
-new_g = displaced_copies(b, g, g_match_ssd)
-new_r = displaced_copies(b, r, r_match_ssd)
-
-manual_r = displaced_copies(b, r, (5,5))
-manual_g = displaced_copies(b, g, (2,3))
-
-y = zeros(new_r[0][:].shape + (3,)).astype(uint8)
-y[:,:,0] = new_r[1][:]
-y[:,:,1] = new_g[1][5:, :-2]
-y[:,:,2] = new_r[0][:]
-figure(); imshow(y)
-
-z = zeros(manual_g[0].shape + (3,)).astype(uint8)
-z[:,:,1] = manual_g[1]
-z[:,:,2] = manual_g[0]
-#figure(); imshow(z)
-
-z = zeros(manual_r[0].shape + (3,)).astype(uint8)
-z[:,:,0] = manual_r[1]
-z[:,:,2] = manual_r[0]
-#figure(); imshow(z)
+if __name__ == '__main__':
+    matplotlib.pyplot.close("all")
+    
+    
+    os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
+    
+    for filename in os.listdir("."):
+        if filename.endswith(".jpg"):
+            ssd_ncc(filename)
+    
