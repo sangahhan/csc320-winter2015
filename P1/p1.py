@@ -85,11 +85,15 @@ def ncc(g,f,m_n):
     std_devs = np.sqrt((G*G).sum() * (F*F).sum())
     
     return subtract_mean / std_devs
-
-
+    
+    
 def zero_mean_ncc(g,f,m_n):
     ''' Return the zero-mean normalized cross correlation of g and f, where f is 
     displaced m down and n left.
+    
+    Note: 
+        This function is not used. I found that this tended to be really 
+        inaccurate compared to non-zero-mean NCC.
     
     Keyword arguments:
     g -- base image
@@ -256,7 +260,13 @@ def max_displacement(v1, v2):
     return result
     
 
-def part1(func, img_name, displacement_range=10):
+def normalize_image(img):
+    ''' Normalize the given image to be in the range 0 & 255. '''
+    
+    img *= (255.0/img.max())
+
+
+def part1(img_name, func, displacement_range=10):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given.
     
@@ -271,6 +281,7 @@ def part1(func, img_name, displacement_range=10):
     
     i = imread(img_name)
     i.astype(uint8)
+    normalize_image(i)
 
     # how much off the sides to crop off later...
     w = i.shape[1]
@@ -297,29 +308,140 @@ def part1(func, img_name, displacement_range=10):
     return result
 
 
-def ssd_ncc(img_name, displacement_range=10):
+def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
+    ''' Return an image that has been combined to be in full colour format from 
+    the three-channel input image that was given, with the help of an image
+    pyramid.
+    
+    Keyword arguments:
+    func -- corresponds to a function that implements some sort of patch-
+            matching algorithm
+    img_name -- name of the file with the 3-channelled photo (in the style of
+                Prokudin-Gorskii), that contains the three inverted negatives 
+                (top to bottom: blue, green, red)
+    displacement_range -- range for the displacement points (default 10)
+    '''
+    
+    i = imread(img_name)
+    i.astype(uint8)
+    normalize_image(i)
+    
+    pyramid = [i]
+    for j in range(1, pyramid_levels):
+        pyramid.insert(0, imresize(i, math.pow(0.5, j)))
+        
+    i = pyramid[0]
+    i.astype(uint8)
+    normalize_image(i)
+
+    # how much off the sides to crop off later...
+    w = i.shape[1]
+    w_5 = np.ceil(w * .05)
+    
+    # cut image into three peices, cropping out the borders    
+    l = i.shape[0]
+    b = i[w_5:(l/3) - w_5, w_5:-w_5]
+    g = i[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
+    r = i[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
+    
+    displacements = get_displacement_vectors(displacement_range)
+    
+    g_match = best_match(func, b, g, displacements)
+    r_match = best_match(func, b, r, displacements)
+    
+    g_shift = g_match
+    r_shift = r_match
+    
+    result = zeros(b.shape + (3,), dtype=uint8)
+    result[:,:,0] = shift(r, r_match)
+    result[:,:,1] = shift(g, g_match)
+    result[:,:,2] = b
+    imshow(result)
+    
+    displacement_decrement = max(int(math.ceil(displacement_range*.25)), 1)
+
+    for img in pyramid[1:]:
+        if displacement_range > displacement_decrement:
+            displacement_range -= displacement_decrement
+        displacements = get_displacement_vectors(displacement_range)
+        
+        # how much off the sides to crop off later...
+        w = i.shape[1]
+        w_5 = np.ceil(w * .05)
+        
+        # cut image into three peices, cropping out the borders    
+        l = img.shape[0]
+        b = img[w_5:(l/3) - w_5, w_5:-w_5]
+        g = img[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
+        r = img[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
+        
+        # shift based on previous values
+        
+        curr_displace = max_displacement(tuple([p * 2 for p in r_shift]),  tuple([p * 2 for p in g_shift]))
+        G = crop(g, curr_displace)
+        R = crop(r, curr_displace)
+        B = crop(b, curr_displace)
+        
+#         displacements = get_displacement_vectors(displacement_range)
+#         g_match = best_match(func, B, G, displacements)
+#         r_match = best_match(func, B, R, displacements)
+#         
+#         g_shift = tuple(map(sum,zip(g_shift,g_match)))
+#         r_shift = tuple(map(sum,zip(r_shift,r_match)))
+#         
+        result = zeros(B.shape + (3,), dtype=uint8)
+        result[:,:,0] = shift(R, tuple([p * 2 for p in r_match]))
+        result[:,:,1] = shift(G, tuple([p * 2 for p in g_match]))
+        result[:,:,2] = B
+    
+#         result = crop(result, max_displacement(r_shift, g_shift))
+        figure(); imshow(result)
+
+
+def ssd_ncc(func, img_name, displacement_range=10):
     ''' Show an image that displays the solution side by side with using
     SSD and NCC, respectively.
     
     Keyword arguments:
+    func -- function that returns the result image (part1 or part2)
     img_name -- name of the file with the 3-channelled photo
     displacement_range -- range for the displacement points, default 10
     '''
 
-    result_ssd = part1(ssd, img_name, displacement_range)
-    result_ncc = part1(ncc, img_name, displacement_range)
-    f = figure(figsize=(12, 8))
+    result_ssd = func(ssd, img_name, displacement_range)
+    result_ncc = func(ncc, img_name, displacement_range)
+    f = figure(figsize=(12, 6))
     f.add_subplot(1, 2, 1)
     imshow(result_ssd)
     f.add_subplot(1, 2, 2)
     imshow(result_ncc)
 
+
 if __name__ == '__main__':
-    matplotlib.pyplot.close("all")
     
-    os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
+    plt.close("all")
+    '''
+    dir = raw_input('Absolute path to images dir: ')
     
-    for filename in os.listdir("."):
+    if len(dir):
+        os.chdir(dir)
+    else:
+        os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
+    
+    # Part 1
+    
+    files = ['00106v.jpg', '00757v.jpg', '00907v.jpg', '00911v.jpg']
+    
+    for filename in files:
         if filename.endswith(".jpg"):
-            ssd_ncc(filename, 15)
+            ssd_ncc(filename, part1)
+        
+    '''
+    # Part 2
+    os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
+    files = []
+    part1('00822u.png', ncc)
+    part2('00822u.png')
+    
+    
     
