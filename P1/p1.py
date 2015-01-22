@@ -103,10 +103,10 @@ def zero_mean_ncc(g,f,m_n):
 
     g_copy, f_copy = displaced_copies(g, f, m_n)
     
-    corr = np.dot(g_copy.flatten(), f_copy.flatten()).sum()
+    dot = np.dot(g_copy.flatten(), f_copy.flatten()).sum()
     norm = np.linalg.norm(g_copy) * np.linalg.norm(f_copy)
     
-    return corr / norm
+    return dot / norm
 
 
 def ssd(g,f,m_n):
@@ -308,7 +308,7 @@ def part1(img_name, func, displacement_range=10):
     return result
 
 
-def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
+def part2(img_name, func=ncc, displacement_range=100, pyramid_levels=5):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given, with the help of an image
     pyramid.
@@ -366,8 +366,7 @@ def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
         displacements = get_displacement_vectors(displacement_range)
         
         # how much off the sides to crop off later...
-        w = i.shape[1]
-        w_5 = np.ceil(w * .05)
+        w_5 += 2
         
         # cut image into three peices, cropping out the borders    
         l = img.shape[0]
@@ -382,20 +381,22 @@ def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
         R = crop(r, curr_displace)
         B = crop(b, curr_displace)
         
-#         displacements = get_displacement_vectors(displacement_range)
-#         g_match = best_match(func, B, G, displacements)
-#         r_match = best_match(func, B, R, displacements)
-#         
-#         g_shift = tuple(map(sum,zip(g_shift,g_match)))
-#         r_shift = tuple(map(sum,zip(r_shift,r_match)))
-#         
+        displacements = get_displacement_vectors(displacement_range)
+        g_match = best_match(func, B, G, displacements)
+        r_match = best_match(func, B, R, displacements)
+        
+        g_shift = tuple(map(sum,zip(g_shift,g_match)))
+        r_shift = tuple(map(sum,zip(r_shift,r_match)))
+        
         result = zeros(B.shape + (3,), dtype=uint8)
         result[:,:,0] = shift(R, tuple([p * 2 for p in r_match]))
         result[:,:,1] = shift(G, tuple([p * 2 for p in g_match]))
         result[:,:,2] = B
     
-#         result = crop(result, max_displacement(r_shift, g_shift))
+        result = crop(result, max_displacement(r_shift, g_shift))
         figure(); imshow(result)
+        
+    return result
 
 
 def ssd_ncc(func, img_name, displacement_range=10):
@@ -408,9 +409,9 @@ def ssd_ncc(func, img_name, displacement_range=10):
     displacement_range -- range for the displacement points, default 10
     '''
 
-    result_ssd = func(ssd, img_name, displacement_range)
-    result_ncc = func(ncc, img_name, displacement_range)
-    f = figure(figsize=(12, 6))
+    result_ssd = func( img_name, ssd,displacement_range)
+    result_ncc = func(img_name, ncc, displacement_range)
+    f = figure(figsize=(11, 6))
     f.add_subplot(1, 2, 1)
     imshow(result_ssd)
     f.add_subplot(1, 2, 2)
@@ -420,7 +421,7 @@ def ssd_ncc(func, img_name, displacement_range=10):
 if __name__ == '__main__':
     
     plt.close("all")
-    '''
+    
     dir = raw_input('Absolute path to images dir: ')
     
     if len(dir):
@@ -430,17 +431,17 @@ if __name__ == '__main__':
     
     # Part 1
     
-    files = ['00106v.jpg', '00757v.jpg', '00907v.jpg', '00911v.jpg']
-    
-    for filename in files:
-        if filename.endswith(".jpg"):
-            ssd_ncc(filename, part1)
-        
-    '''
+    files = ['00757v.jpg', '00907v.jpg', '00911v.jpg','00106v.jpg',]
+#     
+#     for filename in files:
+#         if filename.endswith(".jpg"):
+#             ssd_ncc(part1,filename, 15)
+#         
+#     
     # Part 2
     os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
     files = []
-    part1('00822u.png', ncc)
+    #imshow(part1('00822u.png', ncc))
     part2('00822u.png')
     
     
