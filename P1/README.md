@@ -27,7 +27,7 @@ For Part 1, you may assume that the input image will be of size similar to that 
 - Some tuning needs to be done before the matching works well: for example, if you do not crop out the borders, the matching is less reliable.
 - The input images are negatives. If the brightness ranges from 0 to 255, then for a negative n, the actual channel is 255-n. UPDATE: The images are pre-__inverted__. There is no need to invert them again.
 - NEW: the images won't display correctly if the maximum intensity is above 1 and they type is float. To convert an image i to uint8, go i.astype(uint8)
--- To increase the efficiency of your code, avoid using loops! For example, you should always prefer 
+- To increase the efficiency of your code, avoid using loops! For example, you should always prefer 
 
 	*c = np.dot(u, v)*
 	
