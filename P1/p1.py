@@ -313,7 +313,7 @@ def sum_tup(tup1, tup2):
 def mult_tup(t, s):
     return tuple([item * s for item in t])
 
-def part2(img_name, func=ncc, displacement_range=20, pyramid_levels=5):
+def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given, with the help of an image
     pyramid.
@@ -331,13 +331,14 @@ def part2(img_name, func=ncc, displacement_range=20, pyramid_levels=5):
     i.astype(uint8)
     normalize_image(i)
     
+    # construct the pyramid via a list
     pyramid = [i]
     for j in range(1, pyramid_levels):
         pyramid.insert(0, imresize(i, math.pow(0.5, j)))
-        
+
+    # start @ the smallest
     i = pyramid[0]
     i.astype(uint8)
-    normalize_image(i)
 
     # how much off the sides to crop off later...
     w = i.shape[1]
@@ -361,7 +362,7 @@ def part2(img_name, func=ncc, displacement_range=20, pyramid_levels=5):
     result = crop(result, max_displacement(r_match, g_match))
     figure(); imshow(result)
     
-    displacements_origin = get_displacement_vectors(max(displacement_range / 2, 5))
+    displacements_origin = get_displacement_vectors(10)
     for img in pyramid[1:]:
 
         # how much off the sides to crop off later...
@@ -371,7 +372,6 @@ def part2(img_name, func=ncc, displacement_range=20, pyramid_levels=5):
         
         displacements_r =  tuple([sum_tup(r_match, t) for t in displacements_origin])
         displacements_g =  tuple([sum_tup(g_match, t) for t in displacements_origin])
-        print displacements_r, displacements_g
         # cut image into three peices, cropping out the borders    
         l = img.shape[0]
         b = img[w_5:(l/3) - w_5, w_5:-w_5]
@@ -418,6 +418,19 @@ def ssd_ncc(func, img_name, displacement_range=10):
     imshow(result_ncc)
 
 
+def print_time(func, args, showim=True, unit="minutes"): 
+    start_time = time.time()
+    result = func(*args)
+    if showim:
+        figure(); imshow(result)
+        
+    convert_seconds = {
+        "seconds": 1,
+        "minutes": 60,
+        "hours": 3600
+    }
+    print "--- %s %s ---" % ((time.time() - start_time) / convert_seconds[unit], unit)
+
 if __name__ == '__main__':
     
     plt.close("all")
@@ -440,7 +453,5 @@ if __name__ == '__main__':
     os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
     files = []
     #imshow(part1('00822u.png', ncc))
-    start_time = time.time()
-    part2('00822u.png')
-    print "--- %s seconds ---" % (time.time() - start_time) 
+    print_time(part2, ['00822u.png'], showim=False)
     
