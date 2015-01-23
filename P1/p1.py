@@ -313,7 +313,7 @@ def sum_tup(tup1, tup2):
 def mult_tup(t, s):
     return tuple([item * s for item in t])
 
-def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
+def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given, with the help of an image
     pyramid.
@@ -362,9 +362,10 @@ def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
     result = crop(result, max_displacement(r_match, g_match))
     figure(); imshow(result)
     
-    displacements_origin = get_displacement_vectors(10)
+    
     for img in pyramid[1:]:
-
+        displacement_range /= 2
+        displacements_origin = get_displacement_vectors(max(displacement_range, 5))
         # how much off the sides to crop off later...
         w_5 *= 2
         r_match  = mult_tup(r_match, 2)
@@ -378,13 +379,15 @@ def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
         g = img[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
         r = img[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
         
-        r = shift(r, r_match)
-        g = shift(g, g_match)
+        R = shift(r, r_match)
+        r_match_displaced = best_match(func, b, R, displacements_origin)
+        G = shift(g, g_match)
+        g_match_displaced = best_match(func, b, R, displacements_origin)
         
-        # shift based on previous values
-        r_match = best_match(func, b, r, displacements_r)
-        g_match = best_match(func, b, r, displacements_g)
+        r_match  = sum_tup(r_match, r_match_displaced)
+        g_match = sum_tup(g_match, g_match_displaced)
 
+        # for display
         r = shift(r, r_match)
         g = shift(g, g_match)
         
@@ -421,15 +424,16 @@ def ssd_ncc(func, img_name, displacement_range=10):
 def print_time(func, args, showim=True, unit="minutes"): 
     start_time = time.time()
     result = func(*args)
+    end_time = time.time()
     if showim:
         figure(); imshow(result)
-        
+    
     convert_seconds = {
         "seconds": 1,
         "minutes": 60,
         "hours": 3600
     }
-    print "--- %s %s ---" % ((time.time() - start_time) / convert_seconds[unit], unit)
+    print "--- %s %s ---" % ((end_time - start_time) / convert_seconds[unit], unit)
 
 if __name__ == '__main__':
     
