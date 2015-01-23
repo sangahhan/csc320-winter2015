@@ -126,7 +126,7 @@ def ssd(g,f,m_n):
     return np.sum(diff * diff)
     
     
-def get_displacement_vectors(n):
+def get_displacement_vectors(n, step=1):
     ''' Return a list of vectors (represented by tuples) that represent possible
     displacement points that go up to a certain range.
     
@@ -134,7 +134,7 @@ def get_displacement_vectors(n):
     n -- range for the displacement points -> [-n, n]
     '''
     result = [(0,0)]
-    for i in range(1, n+1):
+    for i in range(1, n+1, step):
         for j in range(n+1):
             if (i,j) not in result:
                 result.append((i,j))
@@ -307,8 +307,13 @@ def part1(img_name, func, displacement_range=10):
     
     return result
 
+def sum_tup(tup1, tup2):
+    return tuple(map(sum,zip(tup1,tup2)))
+    
+def mult_tup(t, s):
+    return tuple([item * s for item in t])
 
-def part2(img_name, func=ncc, displacement_range=100, pyramid_levels=5):
+def part2(img_name, func=ncc, displacement_range=20, pyramid_levels=5):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given, with the help of an image
     pyramid.
@@ -349,51 +354,46 @@ def part2(img_name, func=ncc, displacement_range=100, pyramid_levels=5):
     g_match = best_match(func, b, g, displacements)
     r_match = best_match(func, b, r, displacements)
     
-    g_shift = g_match
-    r_shift = r_match
-    
     result = zeros(b.shape + (3,), dtype=uint8)
     result[:,:,0] = shift(r, r_match)
     result[:,:,1] = shift(g, g_match)
     result[:,:,2] = b
-    imshow(result)
+    result = crop(result, max_displacement(r_match, g_match))
+    figure(); imshow(result)
     
-    displacement_decrement = max(int(math.ceil(displacement_range*.25)), 1)
-
+    displacements_origin = get_displacement_vectors(max(displacement_range / 2, 5))
     for img in pyramid[1:]:
-        if displacement_range > displacement_decrement:
-            displacement_range -= displacement_decrement
-        displacements = get_displacement_vectors(displacement_range)
-        
+
         # how much off the sides to crop off later...
-        w_5 += 2
+        w_5 *= 2
+        r_match  = mult_tup(r_match, 2)
+        g_match = mult_tup(g_match, 2)
         
+        displacements_r =  tuple([sum_tup(r_match, t) for t in displacements_origin])
+        displacements_g =  tuple([sum_tup(g_match, t) for t in displacements_origin])
+        print displacements_r, displacements_g
         # cut image into three peices, cropping out the borders    
         l = img.shape[0]
         b = img[w_5:(l/3) - w_5, w_5:-w_5]
         g = img[w_5 + (l/3):((l/3)*2) - w_5, w_5:-w_5]
         r = img[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
         
+        r = shift(r, r_match)
+        g = shift(g, g_match)
+        
         # shift based on previous values
+        r_match = best_match(func, b, r, displacements_r)
+        g_match = best_match(func, b, r, displacements_g)
+
+        r = shift(r, r_match)
+        g = shift(g, g_match)
         
-        curr_displace = max_displacement(tuple([p * 2 for p in r_shift]),  tuple([p * 2 for p in g_shift]))
-        G = crop(g, curr_displace)
-        R = crop(r, curr_displace)
-        B = crop(b, curr_displace)
-        
-        displacements = get_displacement_vectors(displacement_range)
-        g_match = best_match(func, B, G, displacements)
-        r_match = best_match(func, B, R, displacements)
-        
-        g_shift = tuple(map(sum,zip(g_shift,g_match)))
-        r_shift = tuple(map(sum,zip(r_shift,r_match)))
-        
-        result = zeros(B.shape + (3,), dtype=uint8)
-        result[:,:,0] = shift(R, tuple([p * 2 for p in r_match]))
-        result[:,:,1] = shift(G, tuple([p * 2 for p in g_match]))
-        result[:,:,2] = B
+        result = zeros(b.shape + (3,), dtype=uint8)
+        result[:,:,0] = r
+        result[:,:,1] = g
+        result[:,:,2] = b
     
-        result = crop(result, max_displacement(r_shift, g_shift))
+        result = crop(result, max_displacement(r_match, g_match))
         figure(); imshow(result)
         
     return result
@@ -409,7 +409,7 @@ def ssd_ncc(func, img_name, displacement_range=10):
     displacement_range -- range for the displacement points, default 10
     '''
 
-    result_ssd = func( img_name, ssd,displacement_range)
+    result_ssd = func(img_name, ssd,displacement_range)
     result_ncc = func(img_name, ncc, displacement_range)
     f = figure(figsize=(11, 6))
     f.add_subplot(1, 2, 1)
@@ -422,27 +422,25 @@ if __name__ == '__main__':
     
     plt.close("all")
     
-    dir = raw_input('Absolute path to images dir: ')
+#     if len(dir):
+#         os.chdir(dir)
+#     else:
+    os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
     
-    if len(dir):
-        os.chdir(dir)
-    else:
-        os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
-    
-    # Part 1
-    
-    files = ['00757v.jpg', '00907v.jpg', '00911v.jpg','00106v.jpg',]
+#     # Part 1
+#     
+#     files = ['00757v.jpg', '00907v.jpg', '00911v.jpg','00106v.jpg',]
 #     
 #     for filename in files:
-#         if filename.endswith(".jpg"):
-#             ssd_ncc(part1,filename, 15)
+#         ssd_ncc(part1, filename)
 #         
 #     
     # Part 2
+
     os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
     files = []
     #imshow(part1('00822u.png', ncc))
+    start_time = time.time()
     part2('00822u.png')
-    
-    
+    print "--- %s seconds ---" % (time.time() - start_time) 
     

@@ -6,7 +6,7 @@ In this project, you will explore techniques to automatically combine the __inve
 
 ##The Input
 
-As input, you will take in an image that contains the three __inverted__ negatives (top to bottom: blue, green, red). An example of an image that you should work on is [here](images/00757v.jpg "An ideal image"). The images could be of different sizes. The images you should work with are are available [here](http://www.cs.toronto.edu/~guerzhoy/320/proj1/images.zip" A .zip file with images").
+As input, you will take in an image that contains the three __inverted__ negatives (top to bottom: blue, green, red). An example of an image that you should work on is [here](images/00757v.jpg "An ideal image"). The images could be of different sizes. The images you should work with are are available [here](http://www.cs.toronto.edu/~guerzhoy/320/proj1/images.zip "A .zip file with images").
 
 
 ##Part 0
