@@ -467,16 +467,15 @@ def part1_test():
     images. Also, display an example of using the non-zero mean NCC function. 
     Output order should correspond to the order in the report (p1.pdf).
     '''
-    files = ["00757v", "00907v", "00911v","00106v"]
+    files = ["00757v.jpg", "00907v.jpg", "00911v.jpg","00106v.jpg"]
     
     for filename in files:
-        ssd_ncc(part1, filename + ".jpg")
+        ssd_ncc(part1, filename)
         
-    # non-zero mean variant
-    part1("00106v.jpg", zero_mean_ncc)
+    plt.show()
 
 
-def part2_test():
+def part2_test(show_image=True):
     ''' Obtain the time to run NCC on a smaller image using the function for
     part 1. Than display examples of combining NCC with the use of an image 
     pyramid to align higher-resolution images. Print the runtimes to compute the
@@ -485,16 +484,19 @@ def part2_test():
     '''
     
     # runtime from part 1
-    print_time(part1, ['00106v.jpg', ncc], unit="seconds")
+    print_time(part1, ['00106v.jpg', ncc], False, "seconds")
     
     # running part 2
     files = ["00128u.png", "01047u.png", "00458u.png", "00822u.png"]
     
     for filename in files:
-        print_time(part2, [filename + ".png", 10])
+        print_time(part2, [filename, 10], show_image)
+    
+    if show_image:
+        plt.show()
 
 
-def run_tests(part_num=0):
+def run_tests(part_num=None):
     ''' Run tests for each part in the project, depending on the given part
     number. Trying to run part 0 will exit the program, as there is no code to 
     test for part 0. Any input besides 1 or 2 (corresponding with part 1 & part
@@ -532,7 +534,7 @@ if __name__ == "__main__":
                     "Invalid input (e.g. empty input) will run all parts.")
     num = raw_input("> Please type, 0, 1 or 2, then hit [ENTER]: ")
     try:
-        num_int = int(num.strip())
+        num_int = int(num)
         run_tests(num_int)
     except ValueError:
         run_tests()
