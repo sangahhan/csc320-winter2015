@@ -475,8 +475,8 @@ def part1_test():
     
     for filename in files:
         ssd_ncc(part1, filename)
-        
-    plt.show()
+        if filename is "00911v.jpg":
+            ssd_ncc(part1, filename, 15)
 
 
 def part2_test(show_image=True):
@@ -495,9 +495,6 @@ def part2_test(show_image=True):
     
     for filename in files:
         print_time(part2, [filename, 10], show_image)
-    
-    if show_image:
-        plt.show()
 
 
 def run_tests(part_num=None):
@@ -530,13 +527,14 @@ def run_tests(part_num=None):
 
 if __name__ == "__main__":
     
-    #os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
+    os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
     
     print ("> %s" + "\n> %s" * 3) % ("g2sangah, CSC320H1 Winter 2015", 
                     "Project 1: The Prokudin-Gorskii Colour Photo Collection",
                     "Input which part of the project you want to run.",
                     "Invalid input (e.g. empty input) will run all parts.")
     num = raw_input("> Please type, 0, 1 or 2, then hit [ENTER]: ")
+    plt.ion()
     try:
         num_int = int(num)
         run_tests(num_int)

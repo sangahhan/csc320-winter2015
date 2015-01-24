@@ -235,7 +235,7 @@ For the most part, the two methods, SSD and NCC, produced very similar results, 
 
 \begin{figure*}[h!]
     \begin{center}
-        \displayImage{00757v_part1out.png}{0.5}
+        \displayImage{00757v_part1out.jpg}{0.5}
         \caption{Left: coloured version of Figure ~\ref{fig:sampleinput}(a), aligned with SSD. Right: coloured version of ~\ref{fig:sampleinput}(a), aligned with NCC.}
         \label{fig:part1outputa}
     \end{center}
@@ -243,7 +243,7 @@ For the most part, the two methods, SSD and NCC, produced very similar results, 
 
 \begin{figure*}[h!]
     \begin{center}
-        \displayImage{00106v_part1out.png}{0.5}
+        \displayImage{00106v_part1out.jpg}{0.5}
         \caption{Left: coloured version of Figure ~\ref{fig:sampleinput}(b), aligned with SSD. Right: coloured version of ~\ref{fig:sampleinput}(b), aligned with NCC.}
         \label{fig:part1outputd}
     \end{center}
@@ -255,13 +255,13 @@ However, not all of the inputs produced perfect outputs, for various reason. One
 
     \begin{subfigure}[b]{1\textwidth}
         \begin{center}
-        \displayImage{00911v_part1out.png}{0.5}
+        \displayImage{00911v_part1out.jpg}{0.5}
         \caption{Left: coloured version of Figure~\ref{fig:sampleinput}(c), aligned with SSD. Right: coloured version of Figure~\ref{fig:sampleinput}(c), aligned with NCC. Both images checked for alignment for displacements up to 10 pixels.}
         \end{center}
     \end{subfigure}
     \begin{subfigure}[b]{1\textwidth}
         \begin{center}
-        \displayImage{00911v_part1out2.png}{0.5}
+        \displayImage{00911v_part1out2.jpg}{0.5}
         \caption{Left: coloured version of Figure~\ref{fig:sampleinput}(c), aligned with SSD. Right: coloured version of Figure~\ref{fig:sampleinput}(c), aligned with NCC. Both images checked for alignment for displacements up to 15 pixels.}
          \end{center}
     \end{subfigure}
@@ -276,7 +276,7 @@ The resulting photos from applying both SSD and NCC in Figure~\ref{fig:part1outp
 Finally, there were some images for which the two methods did not yield similar results. Figure~\ref{fig:part1outputb} shows an example of this occurrence. Though SSD is more computationally efficient compared to NCC, SSD is also more sensitive to the intensity of the images being compared. NCC avoids this by subtracting the mean and dividing by the standard deviation for every point. 
 \begin{figure*}[h!]
     \begin{center}
-        \displayImage{00907v_part1out.png}{0.5}
+        \displayImage{00907v_part1out.jpg}{0.5}
         \caption{Left: coloured version of Figure ~\ref{fig:sampleinput}(b), aligned with SSD. Right: coloured version of ~\ref{fig:sampleinput}(b), aligned with NCC.}
         \label{fig:part1outputb}
     \end{center}
@@ -315,22 +315,22 @@ OUTPUT FROM TESTS (MacBook Pro running OS X 10.9.5; 3GHz Intel Core i7; 8GB memo
 \begin{figure*}[h!]
     \begin{center}
     \begin{subfigure}[b]{0.5\textwidth}
-        \displayImage{00128u_part2out.png}{0.4}
+        \displayImage{00128u_part2out.jpg}{0.4}
         \caption{Runtime: 1.57219223579 minutes.}
     \end{subfigure}%
     ~
     \begin{subfigure}[b]{0.5\textwidth}
-        \displayImage{01047u_part2out.png}{0.4}
+        \displayImage{01047u_part2out.jpg}{0.4}
         \caption{Runtime: 1.60740085045 minutes.}
     \end{subfigure}
     
     \begin{subfigure}[t]{0.5\textwidth}
-        \displayImage{00458u_part2out.png}{0.4}
+        \displayImage{00458u_part2out.jpg}{0.4}
         \caption{Runtime: 1.58106016715 minutes. Note that upon close inspection, the green channel is slightly misaligned.}
     \end{subfigure}%
     ~
     \begin{subfigure}[t]{0.5\textwidth}
-        \displayImage{00822u_part2out.png}{0.4}
+        \displayImage{00822u_part2out.jpg}{0.4}
         \caption{Runtime: 1.73020026684 minutes. Here, the channels are actually noticably misaligned in actual size. I speculate that maybe there was, at one point, a time where multiple displacements produced the highest score, but my implementation chose one that does not actually align.}
     \end{subfigure}
     \end{center}
