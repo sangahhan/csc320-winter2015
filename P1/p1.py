@@ -132,6 +132,7 @@ def get_displacement_vectors(n, step=1):
     
     Keyword arguments:
     n -- range for the displacement points -> [-n, n]
+    step -- amount of space between points
     '''
     result = [(0,0)]
     for i in range(1, n+1, step):
@@ -271,11 +272,11 @@ def part1(img_name, func, displacement_range=10):
     the three-channel input image that was given.
     
     Keyword arguments:
-    func -- corresponds to a function that implements some sort of patch-
-            matching algorithm
     img_name -- name of the file with the 3-channelled photo (in the style of
                 Prokudin-Gorskii), that contains the three inverted negatives 
                 (top to bottom: blue, green, red)
+    func -- corresponds to a function that implements some sort of patch-
+            matching algorithm
     displacement_range -- range for the displacement points (default 10)
     '''
     
@@ -334,12 +335,15 @@ def part2(img_name, displacement_range=10, func=ncc, min_percent=0.03):
     pyramid.
     
     Keyword arguments:
-    func -- corresponds to a function that implements some sort of patch-
-            matching algorithm
     img_name -- name of the file with the 3-channelled photo (in the style of
                 Prokudin-Gorskii), that contains the three inverted negatives 
                 (top to bottom: blue, green, red)
     displacement_range -- range for the displacement points (default 10)
+    func -- corresponds to a function that implements some sort of patch-
+            matching algorithm (default ncc)
+    min_percent -- a fraction that corresponds to the percent of the size of the
+                    image in the highest level of the pyramid wrt the original
+                    (default 0.03)
     '''
     
     i = imread(img_name)
@@ -422,7 +426,7 @@ def ssd_ncc(func, img_name, displacement_range=10):
     Keyword arguments:
     func -- function that returns the result image (part1 or part2)
     img_name -- name of the file with the 3-channelled photo
-    displacement_range -- range for the displacement points, default 10
+    displacement_range -- range for the displacement points (default 10)
     '''
 
     result_ssd = func(img_name, ssd,displacement_range)
@@ -441,7 +445,7 @@ def print_time(func, args=[], show_image=True, unit="minutes"):
     func -- function that returns the result image (part1 or part2)
     args -- the arguments to pass into the function in a list
     show_image -- a boolean that determines displaying the solution image
-    units -- time units to display; seconds|minutes|hours
+    unit -- time units to display; seconds|minutes|hours
     '''
     
     start_time = time.time()
@@ -526,7 +530,7 @@ def run_tests(part_num=None):
 
 if __name__ == "__main__":
     
-    os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
+    #os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
     
     print ("> %s" + "\n> %s" * 3) % ("g2sangah, CSC320H1 Winter 2015", 
                     "Project 1: The Prokudin-Gorskii Colour Photo Collection",
