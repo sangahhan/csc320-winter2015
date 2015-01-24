@@ -11,13 +11,6 @@ import matplotlib.image as mpimg
 import os
 
 
-###################
-#Run the following for grayscale images to show up correctly and for images
-#to display immediately
-#%matplotlib
-#gray()
-########################
-    
 def displaced_copies(g,f,m_n):
     ''' Return copies of g & f st they only contain the intersection of g and f 
     when f is displaced m down and n left.
@@ -494,7 +487,7 @@ def part2_test(show_image=True):
     files = ["00128u.png", "01047u.png", "00458u.png", "00822u.png"]
     
     for filename in files:
-        print_time(part2, [filename, 10], show_image)
+        print_time(part2, [filename], show_image)
 
 
 def run_tests(part_num=None):
@@ -527,7 +520,7 @@ def run_tests(part_num=None):
 
 if __name__ == "__main__":
     
-    os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
+    #os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
     
     print ("> %s" + "\n> %s" * 3) % ("g2sangah, CSC320H1 Winter 2015", 
                     "Project 1: The Prokudin-Gorskii Colour Photo Collection",
