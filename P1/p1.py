@@ -307,13 +307,28 @@ def part1(img_name, func, displacement_range=10):
     
     return result
 
+
 def sum_tup(tup1, tup2):
+    ''' Given two tuples, return a tuple that contains the sum of their 
+    corresponding indices.
+    '''
+    
     return tuple(map(sum,zip(tup1,tup2)))
     
+    
 def mult_tup(t, s):
+    ''' Given a tuple and some scalar (number), return a tuple that contains all 
+    the items from the original multiplied by that number.
+    
+    Keyword arguments:
+    t -- the original tuple
+    s -- number to multiply the items by
+    '''
+    
     return tuple([item * s for item in t])
 
-def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
+
+def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given, with the help of an image
     pyramid.
@@ -354,25 +369,17 @@ def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
     
     g_match = best_match(func, b, g, displacements)
     r_match = best_match(func, b, r, displacements)
-    
-    result = zeros(b.shape + (3,), dtype=uint8)
-    result[:,:,0] = shift(r, r_match)
-    result[:,:,1] = shift(g, g_match)
-    result[:,:,2] = b
-    result = crop(result, max_displacement(r_match, g_match))
-    figure(); imshow(result)
-    
-    
+
     for img in pyramid[1:]:
-        displacement_range /= 2
-        displacements_origin = get_displacement_vectors(max(displacement_range, 5))
+        displacement_range = max(displacement_range-1, 3)
+        displacements = get_displacement_vectors(displacement_range)
         # how much off the sides to crop off later...
         w_5 *= 2
         r_match  = mult_tup(r_match, 2)
         g_match = mult_tup(g_match, 2)
         
-        displacements_r =  tuple([sum_tup(r_match, t) for t in displacements_origin])
-        displacements_g =  tuple([sum_tup(g_match, t) for t in displacements_origin])
+        displacements_r =  tuple([sum_tup(r_match, t) for t in displacements])
+        displacements_g =  tuple([sum_tup(g_match, t) for t in displacements])
         # cut image into three peices, cropping out the borders    
         l = img.shape[0]
         b = img[w_5:(l/3) - w_5, w_5:-w_5]
@@ -380,31 +387,30 @@ def part2(img_name, func=ncc, displacement_range=15, pyramid_levels=5):
         r = img[w_5 + ((l/3)*2):l-(l%3) - w_5, w_5:-w_5]
         
         R = shift(r, r_match)
-        r_match_displaced = best_match(func, b, R, displacements_origin)
+        r_match_displaced = best_match(func, b, R, displacements)
         G = shift(g, g_match)
-        g_match_displaced = best_match(func, b, R, displacements_origin)
+        g_match_displaced = best_match(func, b, R, displacements)
         
         r_match  = sum_tup(r_match, r_match_displaced)
         g_match = sum_tup(g_match, g_match_displaced)
 
-        # for display
-        r = shift(r, r_match)
-        g = shift(g, g_match)
-        
-        result = zeros(b.shape + (3,), dtype=uint8)
-        result[:,:,0] = r
-        result[:,:,1] = g
-        result[:,:,2] = b
+    # at this point, the displacements in r_match and g_match should be correct
+    r = shift(r, r_match)
+    g = shift(g, g_match)
     
-        result = crop(result, max_displacement(r_match, g_match))
-        figure(); imshow(result)
-        
+    # construct final image
+    result = zeros(b.shape + (3,), dtype=uint8)
+    result[:,:,0] = r
+    result[:,:,1] = g
+    result[:,:,2] = b
+
+    result = crop(result, max_displacement(r_match, g_match))
     return result
 
 
 def ssd_ncc(func, img_name, displacement_range=10):
-    ''' Show an image that displays the solution side by side with using
-    SSD and NCC, respectively.
+    ''' Show an image that displays the solution for the image with the given 
+    name side by side, using SSD and NCC, respectively.
     
     Keyword arguments:
     func -- function that returns the result image (part1 or part2)
@@ -422,40 +428,72 @@ def ssd_ncc(func, img_name, displacement_range=10):
 
 
 def print_time(func, args, showim=True, unit="minutes"): 
+    ''' Print the time that the given function takes to produce a solution.
+    
+    Keyword arguments:
+    func -- function that returns the result image (part1 or part2)
+    args -- the arguments to pass into the function in a list
+    displacement_range -- time units to display; seconds|minutes|hours
+    '''
     start_time = time.time()
     result = func(*args)
     end_time = time.time()
     if showim:
         figure(); imshow(result)
     
+    unit = unit.lower()
     convert_seconds = {
         "seconds": 1,
         "minutes": 60,
         "hours": 3600
     }
-    print "--- %s %s ---" % ((end_time - start_time) / convert_seconds[unit], unit)
+    print "%s(%s): %s %s" % (func.__name__,
+                            ', '.join(args), 
+                            (end_time - start_time) / convert_seconds[unit], 
+                            unit)
+
+def part1_test():
+    files = ['00757v', '00907v', '00911v','00106v']
+    
+    for filename in files:
+        ssd_ncc(part1, filename + ".jpg")
+
+
+def part2_test():
+    files = ['00029u', '00087u', '00128u', '00458u', '00737u', '00822u', 
+            '00892u', '01043u', '01047u']
+    
+    for filename in files:
+        print_time(part2, [filename + ".png"])
+
+
+def run_tests(part_num=0):
+    plt.close("all")
+    if part_num is 1:
+        print "-- Running test for part 1. --"
+        part1_test()
+        print "-- Completed test for part 1. --"
+    elif part_num is 2:
+        print "-- Running test for part 2. --"
+        part2_test()
+        print "-- Completed test for part 2. --"
+    else:
+        print "-- Running test for all parts. ---"
+        print "-- Running test for part 1.-- "
+        part1_test()
+        print "-- Completed test for part 1. --"
+        print "-- Running test for part 2. --"
+        part2_test()
+        print "-- Completed test for part 2. --"
+    
 
 if __name__ == '__main__':
     
-    plt.close("all")
-    
-#     if len(dir):
-#         os.chdir(dir)
-#     else:
     os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
-    
-#     # Part 1
-#     
-#     files = ['00757v.jpg', '00907v.jpg', '00911v.jpg','00106v.jpg',]
-#     
-#     for filename in files:
-#         ssd_ncc(part1, filename)
-#         
-#     
-    # Part 2
-
-    os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
-    files = []
-    #imshow(part1('00822u.png', ncc))
-    print_time(part2, ['00822u.png'], showim=False)
+    num = raw_input("Which part do you want to run? ")
+    try:
+        i = int(num.strip())
+        run_tests(i)
+    except ValueError:
+        run_tests()
     
