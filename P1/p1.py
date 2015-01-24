@@ -200,14 +200,14 @@ def shift(img, displacement):
     N = abs(n)
     if m > 0:
         if n > 0:
-            result = np.lib.pad(img[:-M,:-N],((M, 0),(N, 0)),mode='constant')
+            result = np.lib.pad(img[:-M,:-N],((M, 0),(N, 0)),mode="constant")
         else:
-            result = np.lib.pad(img[:-M,N:],((M, 0),(0, N)),mode='constant')
+            result = np.lib.pad(img[:-M,N:],((M, 0),(0, N)),mode="constant")
     else:
         if n > 0:
-            result = np.lib.pad(img[M:,:-N],((0, M),(N, 0)),mode='constant')
+            result = np.lib.pad(img[M:,:-N],((0, M),(N, 0)),mode="constant")
         else:
-            result = np.lib.pad(img[M:,N:],((0, M),(0, N)),mode='constant')
+            result = np.lib.pad(img[M:,N:],((0, M),(0, N)),mode="constant")
     return result
     
     
@@ -298,11 +298,11 @@ def part1(img_name, func, displacement_range=10):
     g_match = best_match(func, b, g, displacements)
     r_match = best_match(func, b, r, displacements)
     
+    # construct final image
     result = zeros(b.shape + (3,), dtype=uint8)
     result[:,:,0] = shift(r, r_match)
     result[:,:,1] = shift(g, g_match)
     result[:,:,2] = b
-    
     result = crop(result, max_displacement(r_match, g_match))
     
     return result
@@ -328,7 +328,7 @@ def mult_tup(t, s):
     return tuple([item * s for item in t])
 
 
-def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
+def part2(img_name, displacement_range=10, func=ncc, min_percent=0.03):
     ''' Return an image that has been combined to be in full colour format from 
     the three-channel input image that was given, with the help of an image
     pyramid.
@@ -345,6 +345,8 @@ def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
     i = imread(img_name)
     i.astype(uint8)
     normalize_image(i)
+    
+    pyramid_levels = max(int(math.floor(math.log(min_percent, 0.5))), 5)
     
     # construct the pyramid via a list
     pyramid = [i]
@@ -371,15 +373,20 @@ def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
     r_match = best_match(func, b, r, displacements)
 
     for img in pyramid[1:]:
+        
+        # decrement the range of displacements to check
         displacement_range = max(displacement_range-1, 3)
         displacements = get_displacement_vectors(displacement_range)
+        
         # how much off the sides to crop off later...
         w_5 *= 2
         r_match  = mult_tup(r_match, 2)
         g_match = mult_tup(g_match, 2)
         
+        # add the displacements to the match from previous pyramid level
         displacements_r =  tuple([sum_tup(r_match, t) for t in displacements])
         displacements_g =  tuple([sum_tup(g_match, t) for t in displacements])
+        
         # cut image into three peices, cropping out the borders    
         l = img.shape[0]
         b = img[w_5:(l/3) - w_5, w_5:-w_5]
@@ -394,7 +401,7 @@ def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
         r_match  = sum_tup(r_match, r_match_displaced)
         g_match = sum_tup(g_match, g_match_displaced)
 
-    # at this point, the displacements in r_match and g_match should be correct
+    # at this point, the displacements in r_match and g_match should be okay
     r = shift(r, r_match)
     g = shift(g, g_match)
     
@@ -403,8 +410,8 @@ def part2(img_name, func=ncc, displacement_range=10, pyramid_levels=5):
     result[:,:,0] = r
     result[:,:,1] = g
     result[:,:,2] = b
-
     result = crop(result, max_displacement(r_match, g_match))
+    
     return result
 
 
@@ -427,18 +434,20 @@ def ssd_ncc(func, img_name, displacement_range=10):
     imshow(result_ncc)
 
 
-def print_time(func, args, showim=True, unit="minutes"): 
+def print_time(func, args=[], show_image=True, unit="minutes"): 
     ''' Print the time that the given function takes to produce a solution.
     
     Keyword arguments:
     func -- function that returns the result image (part1 or part2)
     args -- the arguments to pass into the function in a list
-    displacement_range -- time units to display; seconds|minutes|hours
+    show_image -- a boolean that determines displaying the solution image
+    units -- time units to display; seconds|minutes|hours
     '''
+    
     start_time = time.time()
     result = func(*args)
     end_time = time.time()
-    if showim:
+    if show_image:
         figure(); imshow(result)
     
     unit = unit.lower()
@@ -447,53 +456,84 @@ def print_time(func, args, showim=True, unit="minutes"):
         "minutes": 60,
         "hours": 3600
     }
-    print "%s(%s): %s %s" % (func.__name__,
-                            ', '.join(args), 
+    print "> %s(%s): %s %s" % (func.__name__,
+                            ", ".join([str(arg) for arg in args]), 
                             (end_time - start_time) / convert_seconds[unit], 
                             unit)
 
+
 def part1_test():
-    files = ['00757v', '00907v', '00911v','00106v']
+    ''' Display comparisons between using SSD and NCC to align lower resolution 
+    images. Also, display an example of using the non-zero mean NCC function. 
+    Output order should correspond to the order in the report (p1.pdf).
+    '''
+    files = ["00757v", "00907v", "00911v","00106v"]
     
     for filename in files:
         ssd_ncc(part1, filename + ".jpg")
+        
+    # non-zero mean variant
+    part1("00106v.jpg", zero_mean_ncc)
 
 
 def part2_test():
-    files = ['00029u', '00087u', '00128u', '00458u', '00737u', '00822u', 
-            '00892u', '01043u', '01047u']
+    ''' Obtain the time to run NCC on a smaller image using the function for
+    part 1. Than display examples of combining NCC with the use of an image 
+    pyramid to align higher-resolution images. Print the runtimes to compute the
+    solution for each image. Output order should correspond to the order in the 
+    report (p1.pdf).
+    '''
+    
+    # runtime from part 1
+    print_time(part1, ['00106v.jpg', ncc], unit="seconds")
+    
+    # running part 2
+    files = ["00128u.png", "01047u.png", "00458u.png", "00822u.png"]
     
     for filename in files:
-        print_time(part2, [filename + ".png"])
+        print_time(part2, [filename + ".png", 10])
 
 
 def run_tests(part_num=0):
+    ''' Run tests for each part in the project, depending on the given part
+    number. Trying to run part 0 will exit the program, as there is no code to 
+    test for part 0. Any input besides 1 or 2 (corresponding with part 1 & part
+    2) will simply run all tests. 
+    '''
+    
     plt.close("all")
     if part_num is 1:
-        print "-- Running test for part 1. --"
+        print "> Running test for part 1."
         part1_test()
-        print "-- Completed test for part 1. --"
+        print "> Completed test for part 1."
     elif part_num is 2:
-        print "-- Running test for part 2. --"
+        print "> Running test for part 2."
         part2_test()
-        print "-- Completed test for part 2. --"
+        print "> Completed test for part 2."
+    elif part_num is 0:
+        print "> Goodbye."
     else:
-        print "-- Running test for all parts. ---"
-        print "-- Running test for part 1.-- "
+        print "> Running test for all parts."
+        print "> Running test for part 1."
         part1_test()
-        print "-- Completed test for part 1. --"
-        print "-- Running test for part 2. --"
+        print "> Completed test for part 1."
+        print "> Running test for part 2."
         part2_test()
-        print "-- Completed test for part 2. --"
+        print "> Completed test for part 2."
     
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     
-    os.chdir('/Users/sangahhan/Workspace/School/CSC320/P1/images/')
-    num = raw_input("Which part do you want to run? ")
+    os.chdir("/Users/sangahhan/Workspace/School/CSC320/P1/images/")
+    
+    print ("> %s" + "\n> %s" * 3) % ("g2sangah, CSC320H1 Winter 2015", 
+                    "Project 1: The Prokudin-Gorskii Colour Photo Collection",
+                    "Input which part of the project you want to run.",
+                    "Invalid input (e.g. empty input) will run all parts.")
+    num = raw_input("> Please type, 0, 1 or 2, then hit [ENTER]: ")
     try:
-        i = int(num.strip())
-        run_tests(i)
+        num_int = int(num.strip())
+        run_tests(num_int)
     except ValueError:
         run_tests()
     
